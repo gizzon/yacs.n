@@ -79,8 +79,6 @@
 </template>
 
 <script>
-import { getCourses } from "../services/YacsService";
-import { getDefaultSemester } from "@/services/AdminService";
 import CenterSpinnerComponent from "../components/CenterSpinner";
 import CourseSectionsOpenBadge from "../components/CourseSectionsOpenBadge.vue";
 
@@ -95,14 +93,7 @@ export default {
   },
   data() {
     return {
-      subjectCourseArr: [], // array of courses for the selected subject
-      leftColumnCourses: [],
-      rightColumnCourses: [],
       subject: this.$route.params.subject, // subject object from CourseExplorer
-      // split the total course number to half, left column rounds up
-      leftColumnCourseNum: Number,
-      rightColumnCourseNum: Number,
-      ready: false,
       breadcrumbNav: [
         {
           text: "YACS",
@@ -119,32 +110,39 @@ export default {
       ],
     };
   },
-
-  /**
-   * created function calls automatically once the page is access/ object is created
-   * Loop through all courses in data base
-   * Only store the courses within the same subject/major into an array
-   * subjectCourseArr is an array of course objects
-   */
-  async created() {
-    const querySemester = this.$route.query.semester;
-    this.selectedSemester =
-      querySemester && querySemester != "null"
-        ? querySemester
-        : await getDefaultSemester();
-    const courses = await getCourses(this.selectedSemester);
-    //Obtain All Courses Such That Department Matches The Subject Name.
-    const allTempData = courses.filter((c) => c.department === this.subject);
-    for (let k = 0; k < allTempData.length; k++) {
-      if (k % 2 == 0) this.leftColumnCourses.push(allTempData[k]);
-      else this.rightColumnCourses.push(allTempData[k]);
-    }
-    this.ready = true;
-  },
   methods: {},
-  computed: {},
+  computed: {
+    //courseColumns[0] corresponds to left column, [1] to right column
+    courseColumns() {
+      let leftColumn = [];
+      let rightColumn = [];
+      const courses = this.$store.state.courseList;
+      //Obtain All Courses Such That Department Matches The Subject Name.
+      const allTempData = courses.filter((c) => c.department === this.subject);
+      for (let k = 0; k < allTempData.length; k++) {
+        if (k % 2 == 0) leftColumn.push(allTempData[k]);
+        else rightColumn.push(allTempData[k]);
+      }
+      return [leftColumn, rightColumn];
+    },
+  },
+  metaInfo() {
+    return {
+      title: this.subject,
+      titleTemplate: "%s | YACS",
+      meta: [
+        { vmid: "description", content: "RPI " + this.subject },
+        {
+          vmid: "keywords",
+          content:
+            "RPI, YACS, Rensselaer Polytechnic Institute, " + this.subject,
+        },
+      ],
+    };
+  },
 };
 </script>
+
 
 <style scope>
 .subjectBox {
